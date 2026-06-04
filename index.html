@@ -378,9 +378,14 @@
 
         <!-- TAB 2: Image Manager -->
         <section class="tab-content" id="tab-images">
-          <div class="image-gallery-intro">
-            <h4>Extracted Images (<span id="galleryCount">0</span>)</h4>
-            <p>Select which images you want to host and include in the Squarespace CSV. The first selected image acts as the primary featured image.</p>
+          <div class="image-gallery-intro" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+            <div style="flex: 1;">
+              <h4>Extracted Images (<span id="galleryCount">0</span>)</h4>
+              <p>Select which images you want to host and include in the Squarespace CSV. The first selected image acts as the primary featured image.</p>
+            </div>
+            <button type="button" class="secondary-button" id="downloadAllImagesBtn" style="flex-shrink: 0; padding: 6px 14px; font-size: 11px; white-space: nowrap; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;" title="Download all selected images as a ZIP archive">
+              <span>📥</span> Download ZIP
+            </button>
           </div>
           <div class="image-grid-editor" id="imageGridEditor">
             <!-- Dynamically populated -->

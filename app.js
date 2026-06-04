@@ -2004,6 +2004,111 @@ document.querySelectorAll(".drawer-tabs .tab-link").forEach((btn) => {
   });
 });
 
+// Batch download all checked images as a ZIP file
+document.getElementById("downloadAllImagesBtn").addEventListener("click", async () => {
+  const activeProduct = state.products.find(p => p.id === state.activeProductId);
+  if (!activeProduct) {
+    showToast("No active product selected");
+    return;
+  }
+
+  // Get selected images from DOM (in case the user hasn't clicked "Save" yet)
+  const selectedCards = document.querySelectorAll(".image-grid-editor .image-editor-card.is-selected");
+  let imagesToDownload = Array.from(selectedCards).map(card => card.getAttribute("data-url")).filter(Boolean);
+
+  // Also include custom images entered in textarea
+  const customText = document.getElementById("customImageUrls")?.value || "";
+  const customUrls = customText.split(/\r?\n/).map(u => u.trim()).filter(Boolean);
+  imagesToDownload = [...imagesToDownload, ...customUrls];
+
+  // Fallback: If no images selected at all, download all extracted images
+  if (imagesToDownload.length === 0) {
+    const allCards = document.querySelectorAll(".image-grid-editor .image-editor-card");
+    imagesToDownload = Array.from(allCards).map(card => card.getAttribute("data-url")).filter(Boolean);
+  }
+
+  if (imagesToDownload.length === 0) {
+    showToast("No images available to download");
+    return;
+  }
+
+  const btn = document.getElementById("downloadAllImagesBtn");
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.style.opacity = "0.7";
+  btn.innerHTML = `<span>⏳</span> Processing...`;
+
+  try {
+    // Load JSZip dynamically if it is not present
+    if (!window.JSZip) {
+      showToast("Loading ZIP engine...");
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Failed to load ZIP library from CDN."));
+        document.head.appendChild(script);
+      });
+    }
+
+    const zip = new JSZip();
+    const folderName = activeProduct.handle || "product-images";
+    const imgFolder = zip.folder(folderName);
+
+    showToast(`Downloading ${imagesToDownload.length} images...`);
+
+    // Fetch and compress each image in parallel
+    const downloadPromises = imagesToDownload.map(async (url, index) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+        const blob = await res.blob();
+        
+        let ext = "jpg";
+        const pathPart = url.split("?")[0];
+        const match = pathPart.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i);
+        if (match) {
+          ext = match[1].toLowerCase();
+        }
+        
+        const filename = `${activeProduct.handle || "image"}_${index + 1}.${ext}`;
+        imgFolder.file(filename, blob);
+      } catch (err) {
+        console.warn(`Failed to fetch image directly: ${url}. Error: ${err.message}`);
+      }
+    });
+
+    await Promise.all(downloadPromises);
+
+    // Check if any files were actually added to the folder
+    const filesAdded = Object.keys(zip.files).filter(key => key !== `${folderName}/`);
+    if (filesAdded.length === 0) {
+      throw new Error("Unable to download any images due to connection or CORS restrictions.");
+    }
+
+    showToast("Generating ZIP archive...");
+    const content = await zip.generateAsync({ type: "blob" });
+    const downloadUrl = URL.createObjectURL(content);
+    
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `${activeProduct.handle || "product"}-images.zip`;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+    showToast("ZIP download started! 🚀");
+  } catch (err) {
+    console.error("ZIP Download error:", err);
+    showToast(`Download failed: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.innerHTML = originalHtml;
+  }
+});
+
 // Click image card inside Drawer Image Gallery
 document.getElementById("imageGridEditor").addEventListener("click", (event) => {
   const card = event.target.closest(".image-editor-card");
