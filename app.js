@@ -2005,12 +2005,109 @@ document.querySelectorAll(".drawer-tabs .tab-link").forEach((btn) => {
 });
 
 // Batch download all checked images as a ZIP file
+// Helper to pad image to 1:1 aspect ratio on Canvas
+function processImage(blob, mode) {
+  if (mode === "original") return Promise.resolve(blob);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      
+      const width = img.width;
+      const height = img.height;
+      const size = Math.max(width, height);
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      
+      const ctx = canvas.getContext("2d");
+      
+      // Determine background color
+      let bgColor = "#FFFFFF";
+      if (mode === "square-auto") {
+        // Draw the image offscreen temporarily to read corner pixels
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext("2d");
+        tempCtx.drawImage(img, 0, 0);
+        
+        // Sample top-left corner pixel color
+        try {
+          const pixel = tempCtx.getImageData(0, 0, 1, 1).data;
+          const r = pixel[0];
+          const g = pixel[1];
+          const b = pixel[2];
+          const a = pixel[3] / 255;
+          bgColor = `rgba(${r}, ${g}, ${b}, ${a})`;
+        } catch (e) {
+          console.warn("Could not read corner pixel for background color:", e.message);
+          bgColor = "#FFFFFF"; // Fallback to white if canvas is tainted by CORS
+        }
+      }
+      
+      // Fill canvas background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, size, size);
+      
+      // Center the image inside the square
+      const dx = (size - width) / 2;
+      const dy = (size - height) / 2;
+      ctx.drawImage(img, dx, dy, width, height);
+      
+      // Convert to blob
+      canvas.toBlob((resultBlob) => {
+        if (resultBlob) {
+          resolve(resultBlob);
+        } else {
+          reject(new Error("Canvas conversion to Blob failed."));
+        }
+      }, blob.type || "image/jpeg", 0.95);
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image into canvas helper."));
+    };
+  });
+}
+
+// Helper to trigger staggered download
+function triggerFileDownload(blob, filename, delay = 0) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      setTimeout(() => {
+        URL.revokeObjectURL(downloadUrl);
+        resolve();
+      }, 1000);
+    }, delay);
+  });
+}
+
+// Batch download all checked images as a ZIP file or individual files
 document.getElementById("downloadAllImagesBtn").addEventListener("click", async () => {
   const activeProduct = state.products.find(p => p.id === state.activeProductId);
   if (!activeProduct) {
     showToast("No active product selected");
     return;
   }
+
+  // Read current option selections from toolbelt
+  const resizeMode = document.getElementById("imageResizeMode")?.value || "original";
+  const downloadType = document.getElementById("imageDownloadType")?.value || "zip";
 
   // Get selected images from DOM (in case the user hasn't clicked "Save" yet)
   const selectedCards = document.querySelectorAll(".image-grid-editor .image-editor-card.is-selected");
@@ -2039,8 +2136,8 @@ document.getElementById("downloadAllImagesBtn").addEventListener("click", async 
   btn.innerHTML = `<span>⏳</span> Processing...`;
 
   try {
-    // Load JSZip dynamically if it is not present
-    if (!window.JSZip) {
+    // 1. Load JSZip dynamically if it is not present AND zip download is selected
+    if (downloadType === "zip" && !window.JSZip) {
       showToast("Loading ZIP engine...");
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
@@ -2051,18 +2148,35 @@ document.getElementById("downloadAllImagesBtn").addEventListener("click", async 
       });
     }
 
-    const zip = new JSZip();
-    const folderName = activeProduct.handle || "product-images";
-    const imgFolder = zip.folder(folderName);
+    let zip = null;
+    let imgFolder = null;
+    let folderName = "";
 
-    showToast(`Downloading ${imagesToDownload.length} images...`);
+    if (downloadType === "zip") {
+      zip = new JSZip();
+      folderName = activeProduct.handle || "product-images";
+      imgFolder = zip.folder(folderName);
+    }
 
-    // Fetch and compress each image in parallel
+    showToast(`Downloading/processing ${imagesToDownload.length} images...`);
+
+    let successfulCount = 0;
+
+    // Fetch and compress/download each image in parallel or staggered order
     const downloadPromises = imagesToDownload.map(async (url, index) => {
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP status ${res.status}`);
-        const blob = await res.blob();
+        let blob = await res.blob();
+        
+        // Apply aspect ratio padding if requested
+        if (resizeMode !== "original") {
+          try {
+            blob = await processImage(blob, resizeMode);
+          } catch (e) {
+            console.warn(`Canvas resizing failed for ${url}:`, e.message);
+          }
+        }
         
         let ext = "jpg";
         const pathPart = url.split("?")[0];
@@ -2072,35 +2186,49 @@ document.getElementById("downloadAllImagesBtn").addEventListener("click", async 
         }
         
         const filename = `${activeProduct.handle || "image"}_${index + 1}.${ext}`;
-        imgFolder.file(filename, blob);
+        
+        if (downloadType === "zip") {
+          imgFolder.file(filename, blob);
+          successfulCount++;
+        } else {
+          // Staggered individual file downloads (250ms spacing)
+          await triggerFileDownload(blob, filename, index * 250);
+          successfulCount++;
+        }
       } catch (err) {
-        console.warn(`Failed to fetch image directly: ${url}. Error: ${err.message}`);
+        console.warn(`Failed to process image ${url}:`, err.message);
       }
     });
 
     await Promise.all(downloadPromises);
 
-    // Check if any files were actually added to the folder
-    const filesAdded = Object.keys(zip.files).filter(key => key !== `${folderName}/`);
-    if (filesAdded.length === 0) {
-      throw new Error("Unable to download any images due to connection or CORS restrictions.");
-    }
+    if (downloadType === "zip") {
+      const filesAdded = Object.keys(zip.files).filter(key => key !== `${folderName}/`);
+      if (filesAdded.length === 0) {
+        throw new Error("Unable to download any images due to connection or CORS restrictions.");
+      }
 
-    showToast("Generating ZIP archive...");
-    const content = await zip.generateAsync({ type: "blob" });
-    const downloadUrl = URL.createObjectURL(content);
-    
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = `${activeProduct.handle || "product"}-images.zip`;
-    document.body.appendChild(a);
-    a.click();
-    
-    document.body.removeChild(a);
-    URL.revokeObjectURL(downloadUrl);
-    showToast("ZIP download started! 🚀");
+      showToast("Generating ZIP archive...");
+      const content = await zip.generateAsync({ type: "blob" });
+      const downloadUrl = URL.createObjectURL(content);
+      
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `${activeProduct.handle || "product"}-images.zip`;
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      showToast("ZIP download started! 🚀");
+    } else {
+      if (successfulCount === 0) {
+        throw new Error("No images could be downloaded due to connection or CORS restrictions.");
+      }
+      showToast(`Triggered ${successfulCount} image downloads! 🚀`);
+    }
   } catch (err) {
-    console.error("ZIP Download error:", err);
+    console.error("Image Download error:", err);
     showToast(`Download failed: ${err.message}`);
   } finally {
     btn.disabled = false;

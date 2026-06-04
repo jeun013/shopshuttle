@@ -378,14 +378,32 @@
 
         <!-- TAB 2: Image Manager -->
         <section class="tab-content" id="tab-images">
-          <div class="image-gallery-intro" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-            <div style="flex: 1;">
-              <h4>Extracted Images (<span id="galleryCount">0</span>)</h4>
-              <p>Select which images you want to host and include in the Squarespace CSV. The first selected image acts as the primary featured image.</p>
+          <div class="image-gallery-intro" style="margin-bottom: 12px;">
+            <h4>Extracted Images (<span id="galleryCount">0</span>)</h4>
+            <p>Select which images you want to host and include in the Squarespace CSV. The first selected image acts as the primary featured image.</p>
+          </div>
+          <!-- Image Utility Toolbelt -->
+          <div class="image-toolbelt" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; background-color: var(--bg-soft); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 11px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-weight: 600; color: var(--ink-secondary);">Aspect Ratio:</span>
+              <select id="imageResizeMode" style="padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-app); color: var(--ink-primary); cursor: pointer; height: 26px;">
+                <option value="original">Original Aspect Ratio</option>
+                <option value="square-white">1:1 Square (White BG)</option>
+                <option value="square-auto">1:1 Square (Auto BG Color)</option>
+              </select>
             </div>
-            <button type="button" class="secondary-button" id="downloadAllImagesBtn" style="flex-shrink: 0; padding: 6px 14px; font-size: 11px; white-space: nowrap; height: 32px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;" title="Download all selected images as a ZIP archive">
-              <span>📥</span> Download ZIP
-            </button>
+            
+            <div style="display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap;">
+              <span style="font-weight: 600; color: var(--ink-secondary);">Download Mode:</span>
+              <select id="imageDownloadType" style="padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-app); color: var(--ink-primary); cursor: pointer; height: 26px; margin-right: 4px;">
+                <option value="zip">ZIP Archive (Single File)</option>
+                <option value="individual">Individual Files (Staggered)</option>
+              </select>
+              
+              <button type="button" class="primary-button accent" id="downloadAllImagesBtn" style="padding: 6px 14px; font-size: 11px; white-space: nowrap; height: 26px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; cursor: pointer; border-radius: 4px;" title="Execute batch download">
+                <span>📥</span> Download Images
+              </button>
+            </div>
           </div>
           <div class="image-grid-editor" id="imageGridEditor">
             <!-- Dynamically populated -->
