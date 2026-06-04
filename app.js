@@ -2077,23 +2077,23 @@ function processImage(blob, mode) {
   });
 }
 
-// Helper to trigger staggered download
-function triggerFileDownload(blob, filename, delay = 0) {
+// Helper to trigger download
+function triggerFileDownload(blob, filename) {
   return new Promise((resolve) => {
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    // Revoke the object URL after 5 seconds to ensure the browser has written the file completely
     setTimeout(() => {
-      const downloadUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      
-      document.body.removeChild(a);
-      setTimeout(() => {
-        URL.revokeObjectURL(downloadUrl);
-        resolve();
-      }, 1000);
-    }, delay);
+      URL.revokeObjectURL(downloadUrl);
+    }, 5000);
+    
+    resolve();
   });
 }
 
@@ -2158,49 +2158,81 @@ document.getElementById("downloadAllImagesBtn").addEventListener("click", async 
       imgFolder = zip.folder(folderName);
     }
 
-    showToast(`Downloading/processing ${imagesToDownload.length} images...`);
-
     let successfulCount = 0;
 
-    // Fetch and compress/download each image in parallel or staggered order
-    const downloadPromises = imagesToDownload.map(async (url, index) => {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP status ${res.status}`);
-        let blob = await res.blob();
-        
-        // Apply aspect ratio padding if requested
-        if (resizeMode !== "original") {
-          try {
-            blob = await processImage(blob, resizeMode);
-          } catch (e) {
-            console.warn(`Canvas resizing failed for ${url}:`, e.message);
+    if (downloadType === "zip") {
+      showToast(`Downloading ${imagesToDownload.length} images...`);
+      // Parallel fetches are fine for ZIP since we download only one file at the end
+      const downloadPromises = imagesToDownload.map(async (url, index) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+          let blob = await res.blob();
+          
+          // Apply aspect ratio padding if requested
+          if (resizeMode !== "original") {
+            try {
+              blob = await processImage(blob, resizeMode);
+            } catch (e) {
+              console.warn(`Canvas resizing failed for ${url}:`, e.message);
+            }
           }
-        }
-        
-        let ext = "jpg";
-        const pathPart = url.split("?")[0];
-        const match = pathPart.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i);
-        if (match) {
-          ext = match[1].toLowerCase();
-        }
-        
-        const filename = `${activeProduct.handle || "image"}_${index + 1}.${ext}`;
-        
-        if (downloadType === "zip") {
+          
+          let ext = "jpg";
+          const pathPart = url.split("?")[0];
+          const match = pathPart.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i);
+          if (match) {
+            ext = match[1].toLowerCase();
+          }
+          
+          const filename = `${activeProduct.handle || "image"}_${index + 1}.${ext}`;
           imgFolder.file(filename, blob);
           successfulCount++;
-        } else {
-          // Staggered individual file downloads (250ms spacing)
-          await triggerFileDownload(blob, filename, index * 250);
-          successfulCount++;
+        } catch (err) {
+          console.warn(`Failed to process image ${url}:`, err.message);
         }
-      } catch (err) {
-        console.warn(`Failed to process image ${url}:`, err.message);
+      });
+      await Promise.all(downloadPromises);
+    } else {
+      // Sequential staggered downloads to avoid browser-side spam blocking and concurrency drops!
+      for (let index = 0; index < imagesToDownload.length; index++) {
+        const url = imagesToDownload[index];
+        try {
+          btn.innerHTML = `<span>⏳</span> Saving ${index + 1}/${imagesToDownload.length}`;
+          
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP status ${res.status}`);
+          let blob = await res.blob();
+          
+          // Apply aspect ratio padding if requested
+          if (resizeMode !== "original") {
+            try {
+              blob = await processImage(blob, resizeMode);
+            } catch (e) {
+              console.warn(`Canvas resizing failed for ${url}:`, e.message);
+            }
+          }
+          
+          let ext = "jpg";
+          const pathPart = url.split("?")[0];
+          const match = pathPart.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i);
+          if (match) {
+            ext = match[1].toLowerCase();
+          }
+          
+          const filename = `${activeProduct.handle || "image"}_${index + 1}.${ext}`;
+          
+          // Trigger download immediately
+          await triggerFileDownload(blob, filename);
+          successfulCount++;
+          
+          // Wait 500ms before triggering the next one
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+          console.warn(`Failed to download image ${index + 1}:`, err.message);
+        }
       }
-    });
-
-    await Promise.all(downloadPromises);
+    }
 
     if (downloadType === "zip") {
       const filesAdded = Object.keys(zip.files).filter(key => key !== `${folderName}/`);
@@ -2225,7 +2257,7 @@ document.getElementById("downloadAllImagesBtn").addEventListener("click", async 
       if (successfulCount === 0) {
         throw new Error("No images could be downloaded due to connection or CORS restrictions.");
       }
-      showToast(`Triggered ${successfulCount} image downloads! 🚀`);
+      showToast(`Successfully saved ${successfulCount} images! 🚀`);
     }
   } catch (err) {
     console.error("Image Download error:", err);
