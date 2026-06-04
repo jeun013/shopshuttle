@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "ShopShuttle Clipper",
+  "version": "1.0.0",
+  "description": "Clip product details from Shopify, Squarespace, and WooCommerce into ShopShuttle with one click.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://universal-uploader.pages.dev/*",
+        "http://localhost:8788/*",
+        "http://127.0.0.1:8788/*"
+      ],
+      "js": ["web-bridge.js"]
+    }
+  ]
+}

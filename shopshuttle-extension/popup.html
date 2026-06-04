@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-app: #f5f4f0;
+        --bg-pane: #ffffff;
+        --bg-soft: #faf9f6;
+        --ink-primary: #1a1a1a;
+        --ink-secondary: #666666;
+        --accent-primary: #8f7743;
+        --border-color: #e5e3db;
+        --radius-md: 6px;
+        --radius-sm: 4px;
+        --shadow-md: 0 4px 16px rgba(17, 17, 17, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        width: 320px;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-app);
+        color: var(--ink-primary);
+        padding: 16px;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 14px;
+      }
+
+      .logo-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--accent-primary);
+        box-shadow: 0 0 6px var(--accent-primary);
+      }
+
+      h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .status-box {
+        background-color: var(--bg-pane);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 14px;
+      }
+
+      .status-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--ink-secondary);
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+      }
+
+      .status-text {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .preview-box {
+        display: none;
+        background-color: var(--bg-pane);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 14px;
+      }
+
+      .preview-header {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--accent-primary);
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+
+      .preview-body {
+        display: flex;
+        gap: 10px;
+      }
+
+      .preview-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background-color: white;
+      }
+
+      .preview-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .preview-title {
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .preview-price {
+        font-size: 11px;
+        color: var(--ink-secondary);
+        font-weight: 500;
+      }
+
+      .preview-badges {
+        display: flex;
+        gap: 4px;
+      }
+
+      .badge {
+        font-size: 9px;
+        font-weight: 700;
+        background-color: var(--bg-app);
+        padding: 1px 4px;
+        border-radius: var(--radius-sm);
+        color: var(--ink-secondary);
+      }
+
+      button {
+        width: 100%;
+        padding: 10px 14px;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.15s ease-in-out;
+      }
+
+      .clip-btn {
+        background-color: var(--ink-primary);
+        color: white;
+        margin-bottom: 8px;
+      }
+
+      .clip-btn:hover {
+        background-color: var(--accent-primary);
+      }
+
+      .clip-btn:disabled {
+        background-color: var(--border-color);
+        color: var(--ink-secondary);
+        cursor: not-allowed;
+      }
+
+      .open-btn {
+        background-color: var(--bg-pane);
+        color: var(--ink-primary);
+        border: 1px solid var(--border-color);
+      }
+
+      .open-btn:hover {
+        background-color: var(--bg-soft);
+        border-color: var(--ink-primary);
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 9px;
+        color: var(--ink-secondary);
+        margin-top: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <span class="logo-dot"></span>
+      <h1>ShopShuttle Clipper</h1>
+    </div>
+
+    <div class="status-box" id="statusBox">
+      <p class="status-title">Current Tab</p>
+      <p class="status-text" id="statusText">Detecting product page details...</p>
+    </div>
+
+    <div class="preview-box" id="previewBox">
+      <p class="preview-header">📊 Scraped Product</p>
+      <div class="preview-body">
+        <img class="preview-thumb" id="previewThumb" src="">
+        <div class="preview-info">
+          <p class="preview-title" id="previewTitle">-</p>
+          <p class="preview-price" id="previewPrice">-</p>
+          <div class="preview-badges">
+            <span class="badge" id="badgeVariants">0 variants</span>
+            <span class="badge" id="badgeImages">0 images</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="clip-btn" id="clipBtn" disabled>
+      ⚡ Clip to ShopShuttle
+    </button>
+    
+    <button class="open-btn" id="openBtn">
+      📂 Open ShopShuttle Web App
+    </button>
+
+    <div class="footer">
+      ShopShuttle &copy; 2026. All rights reserved.
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

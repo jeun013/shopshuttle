@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ShopShuttle</title>
+    <!-- Modern Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css?v=0.2.5">
+
+  </head>
+  <body>
+    <main class="app-shell">
+      <!-- Top Premium Navigation Shell -->
+      <header class="app-header">
+        <div class="logo-area">
+          <span class="logo-dot"></span>
+          <div>
+            <h1>ShopShuttle v1.0</h1>
+            <p class="subtitle">Import product links from Shopify, Squarespace, and WooCommerce</p>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <div class="passcode-status-badge premium" id="passcodeStatusBadge" style="cursor: pointer;" title="Show Lite Version Information">
+            <span class="badge-dot"></span>
+            <span class="badge-label">✨ ShopShuttle Lite</span>
+          </div>
+          <button class="danger-button-outline" id="clearAllBtn" type="button" title="Reset all data">Reset Data</button>
+          <button class="theme-toggle-btn" id="themeToggleBtn" type="button" title="Toggle Theme Mode">
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Dual Pane Workspace -->
+      <section class="workspace">
+        <!-- LEFT SIDEBAR: Controls & Product List -->
+        <aside class="left-pane" aria-label="Source inputs">
+          <!-- Input Form Container -->
+          <div class="source-panel">
+            <div class="panel-section-title">
+              <div class="title-group">
+                <h3>Paste Product Links</h3>
+                <p class="panel-desc">Supports Shopify, Squarespace, and WooCommerce</p>
+              </div>
+            </div>
+
+            <form class="link-form" id="linkForm">
+              <div class="textarea-container" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <textarea id="productUrl" name="productUrl" class="import-textarea" placeholder="Paste product page URLs here...&#10;(One URL per line, separate with Enter)" rows="3" required></textarea>
+                <button type="submit" class="submit-btn" title="Start extracting all links" style="width: 100%;">Extract Products</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Configuration Panel -->
+          <div class="config-panel">
+            <div class="panel-section-title">
+              <div class="title-group">
+                <h3>Global Mapping Settings</h3>
+                <p class="panel-desc">Configuration rules applied during CSV generation</p>
+              </div>
+            </div>
+            <div class="control-grid">
+              <label class="full-width">
+                Source Tax Policy
+                <select id="sourceVat">
+                  <option value="incVat" selected>Tax Included (Tax-Inclusive)</option>
+                  <option value="exVat">Tax Excluded (Tax-Exclusive)</option>
+                </select>
+              </label>
+              <label class="full-width">
+                Output Tax Policy
+                <select id="priceSource">
+                  <option value="exVat" selected>Tax Excluded (Tax-Exclusive)</option>
+                  <option value="incVat">Tax Included (Tax-Inclusive)</option>
+                </select>
+              </label>
+              <label class="full-width">
+                Product Status
+                <select id="visibility">
+                  <option value="No" selected>Draft (Hidden)</option>
+                  <option value="Yes">Published (Visible)</option>
+                </select>
+              </label>
+              <label class="full-width">
+                SKU Format
+                <select id="skuPolicy">
+                  <option value="auto" selected>Auto-generate (HANDLE-VARIANTID)</option>
+                  <option value="blank">Leave blank (platform assigns automatically)</option>
+                  <option value="source">Use source SKU only (blank if none)</option>
+                </select>
+              </label>
+              <label>
+                Source Currency
+                <select id="scrapingCurrency">
+                  <option value="USD">USD ($)</option>
+                  <option value="GBP" selected>GBP (£)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="NZD">NZD (NZ$)</option>
+                  <option value="DKK">DKK (kr)</option>
+                </select>
+              </label>
+              <label>
+                Target Currency
+                <select id="outputCurrency">
+                  <option value="USD" selected>USD ($)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="NZD">NZD (NZ$)</option>
+                  <option value="DKK">DKK (kr)</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- Exchange Rate Converter Widget -->
+            <div class="exchange-rate-box" id="exchangeRateBox">
+              <div class="rate-status">
+                <span class="rate-status-dot green"></span>
+                <span id="rateStatusText">Loading exchange rates...</span>
+              </div>
+              <div class="rate-override-input-group">
+                <label for="customExchangeRate">
+                  Custom Exchange Rate
+                  <div class="input-wrapper">
+                    <input type="number" id="customExchangeRate" placeholder="e.g. 1.25" step="0.0001" min="0.0001">
+                    <button class="clear-override-btn" id="clearOverrideBtn" title="Clear override and use live rate" type="button">&times;</button>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
+          <!-- Squarespace Image Guide Panel -->
+          <details class="imported-panel collapsible-reference" id="imageGuidePanel" style="display:none; margin-top: 16px;">
+            <summary class="reference-summary">
+              <span class="eyebrow" style="color: var(--accent-primary);">Squarespace Image Guide</span>
+              <span class="arrow-icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </summary>
+            <div class="image-guide-card" style="margin-top: 12px;">
+              <p style="font-size: 11px; color: var(--ink-secondary); margin-bottom: 12px; line-height: 1.4;">
+                Please map the images in the Squarespace image selection screen in the <strong>order (numbers)</strong> shown below!
+              </p>
+              <div id="imageGuideList" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+          </details>
+
+          <!-- Active Catalog Configuration Info -->
+          <details class="catalog-panel collapsible-reference" id="catalogPanel">
+            <summary class="reference-summary">
+              <div class="title-with-count">
+                <span class="eyebrow">Compiled Rows</span>
+                <strong id="catalogCount" class="counter-badge accent">0 rows</strong>
+              </div>
+              <span class="arrow-icon">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </span>
+            </summary>
+            <div class="catalog-list" id="catalogList" style="margin-top: 12px;"></div>
+          </details>
+        </aside>
+
+        <!-- RIGHT SIDEBAR: Output & Live CSV Table -->
+        <section class="right-pane" aria-label="CSV preview">
+          <!-- Preview Panel Header -->
+          <div class="pane-header">
+            <div class="pane-header-top">
+              <div>
+                <p class="eyebrow uppercase">Export Preview</p>
+                <h2 style="margin: 0;">Export Spreadsheet Preview</h2>
+              </div>
+              <!-- Compact platform download buttons -->
+              <div class="download-buttons-group">
+                <button class="platform-dl-btn" id="downloadCsv" type="button" title="Download Squarespace CSV" style="--pdl-color: var(--accent-primary);">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Squarespace</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="platform-dl-btn" id="downloadShopifyCsv" type="button" title="Download Shopify CSV" style="--pdl-color: #5e8e3e;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                  <span>Shopify</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="platform-dl-btn" id="downloadWooCommerceCsv" type="button" title="Download WooCommerce CSV" style="--pdl-color: #7f54b3;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                  <span>WooCommerce</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Squarespace 1-Click Auto Sync Panel -->
+            <div class="sync-panel" id="sqspSyncPanel" style="display:none;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="pulse-dot"></span>
+                <h6 style="margin: 0; font-size: 12px; font-weight: 700; color: var(--accent-primary);">⚡ Squarespace Image Sync</h6>
+              </div>
+              <p style="font-size: 11px; color: var(--ink-secondary); margin: 0 0 12px 0; line-height: 1.45;">
+                After importing the downloaded CSV into Squarespace, enter your <strong>Developer API Key</strong> below and click the button. Over 80 variant images will be linked 1:1 automatically within seconds!
+              </p>
+              <div style="display: flex; gap: 8px;">
+                <input type="password" id="sqspApiKey" placeholder="Squarespace Developer API Key" style="flex: 1; min-width: 0; padding: 6px 10px; font-size: 11px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-pane); color: var(--ink-primary);">
+                <button class="primary-button" id="btnSyncImages" type="button" style="padding: 6px 14px; font-size: 11px; white-space: nowrap; height: 32px; display: flex; align-items: center; justify-content: center;" title="Sync variant images automatically via Squarespace API">
+                  Sync Images
+                </button>
+              </div>
+
+              <!-- Sync progress bar container (hidden initially) -->
+              <div id="syncProgressContainer" style="display: none; margin-top: 12px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 600; color: var(--ink-secondary); margin-bottom: 4px;">
+                  <span id="syncProgressText" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;">Waiting for Sync...</span>
+                  <span id="syncProgressPercent" style="color: var(--accent-primary);">0%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: var(--bg-soft); border-radius: 3px; overflow: hidden; border: 1px solid var(--border-color);">
+                  <div id="syncProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-primary), #10b981); transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Analytics Summary Ribbon -->
+          <div class="summary-strip" id="summaryStrip">
+            <div class="summary-card">
+              <span>Products</span>
+              <strong id="summaryProducts">0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Variants</span>
+              <strong id="summaryVariants">0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Price Range</span>
+              <strong id="summaryRange">-</strong>
+            </div>
+            <div class="summary-card">
+              <span>Images</span>
+              <strong id="summaryImages">0</strong>
+            </div>
+          </div>
+
+          <!-- Right Pane Tabs -->
+          <div class="right-pane-tabs">
+            <button class="rp-tab-link active" data-rtab="tab-products" type="button">
+              📂 Scraped Products (<span id="matchCount">0</span>)
+            </button>
+            <button class="rp-tab-link" data-rtab="tab-spreadsheet" type="button">
+              📊 Spreadsheet Preview
+            </button>
+          </div>
+
+          <div class="right-pane-body">
+            <!-- TAB 1: Scraped Products -->
+            <div class="rp-tab-content active" id="tab-products">
+              <div class="rp-actions-row">
+                <div class="import-csv-container" style="margin: 0;">
+                  <label for="csvFileInput" class="load-csv-label" style="margin: 0; padding: 6px 12px !important; display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Load CSV
+                  </label>
+                  <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                </div>
+
+                <div id="mergeActionPanel" class="merge-action-panel" style="display: none; margin: 0; padding: 0; background: transparent; border: none; align-items: center; gap: 12px;">
+                  <p style="font-size: 11px; margin: 0; color: var(--ink-primary); font-weight: 600; display: inline-block;">
+                    <span id="selectedCountText" style="color: var(--accent-primary); font-size: 11px; font-weight: 800;">0</span> selected for merging
+                  </p>
+                  <button type="button" class="merge-btn" id="mergeBtn" style="padding: 4px 10px !important;">
+                    Merge Selected
+                  </button>
+                </div>
+              </div>
+
+              <div class="product-stack" id="productStack"></div>
+            </div>
+
+            <!-- TAB 2: Spreadsheet Preview -->
+            <div class="rp-tab-content" id="tab-spreadsheet">
+              <!-- CSV Filter & Search Bar -->
+              <div class="table-toolbar">
+                <div class="search-input-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" id="csvSearch" placeholder="Search CSV rows..." autocomplete="off">
+                </div>
+                <div class="toolbar-hint">Showing up to 100 rows in preview</div>
+              </div>
+
+              <!-- Dynamic Airtable-Style Table Container -->
+              <div class="preview-frame">
+                <table id="previewTable">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <!-- SLIDING INTERACTIVE PRODUCT EDITOR DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <aside class="edit-drawer" id="editDrawer" aria-label="Product editor panel">
+      <header class="drawer-header">
+        <div>
+          <span class="drawer-eyebrow">Edit Product Details</span>
+          <h2 id="drawerProductTitle">Product Editor</h2>
+        </div>
+        <button class="close-drawer-btn" id="closeDrawer" type="button" aria-label="Close panel">&times;</button>
+      </header>
+
+      <!-- Drawer Tabs -->
+      <nav class="drawer-tabs">
+        <button class="tab-link active" data-tab="tab-details" type="button">General Details</button>
+        <button class="tab-link" data-tab="tab-images" type="button">Images</button>
+        <button class="tab-link" data-tab="tab-variants" type="button">Variants</button>
+      </nav>
+
+      <!-- Drawer Scrollable Content Canvas -->
+      <div class="drawer-body">
+        
+        <!-- TAB 1: Fields & Details -->
+        <section class="tab-content active" id="tab-details">
+          <form class="editor-form" id="editorDetailsForm">
+            <div class="form-group-row">
+              <label class="form-label" for="editTitle">
+                Squarespace Title
+                <input type="text" id="editTitle" required>
+              </label>
+              <label class="form-label" for="editHandle">
+                URL Handle / Slug
+                <input type="text" id="editHandle" required>
+              </label>
+            </div>
+
+            <div class="form-group-row">
+              <label class="form-label" for="editPage">
+                Product Page (URL Path)
+                <input type="text" id="editPage" placeholder="shop" required>
+              </label>
+              <label class="form-label" for="editCategory">
+                Store Categories (Comma separated)
+                <input type="text" id="editCategory" placeholder="Furniture, Beds">
+              </label>
+            </div>
+
+            <label class="form-label" for="editTags">
+              Store Tags (Comma separated)
+              <input type="text" id="editTags" placeholder="MOEBE, bed, frame">
+            </label>
+
+            <label class="form-label" for="editVatStatus">
+              Price VAT Status (For reference only - NOT exported)
+              <input type="text" id="editVatStatus" placeholder="Analyzing..." style="background-color: var(--bg-app); cursor: not-allowed;" readonly>
+            </label>
+
+            <label class="form-label" for="editDescription">
+              Squarespace Rich Description
+              <textarea id="editDescription" rows="5" placeholder="Description of the product..."></textarea>
+            </label>
+
+
+          </form>
+        </section>
+
+        <!-- TAB 2: Image Manager -->
+        <section class="tab-content" id="tab-images">
+          <div class="image-gallery-intro">
+            <h4>Extracted Images (<span id="galleryCount">0</span>)</h4>
+            <p>Select which images you want to host and include in the Squarespace CSV. The first selected image acts as the primary featured image.</p>
+          </div>
+          <div class="image-grid-editor" id="imageGridEditor">
+            <!-- Dynamically populated -->
+          </div>
+          <div class="form-group" style="margin-top: 18px;">
+            <label class="form-label" for="customImageUrls">
+              Custom Image URLs (One URL per line)
+              <textarea id="customImageUrls" rows="3" placeholder="https://example.com/image.jpg"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <!-- TAB 3: Variant Builder -->
+        <section class="tab-content" id="tab-variants">
+          <div class="variant-builder-intro">
+            <h4>Variant Options Configuration</h4>
+            <p>Define the option names (e.g., Color, Size) for your product. Editing these option values or adding variant combinations will automatically rebuild the Squarespace catalog rows.</p>
+          </div>
+
+          <!-- Options Name Configs -->
+          <div class="options-inputs-box">
+            <div class="form-group-row">
+              <label class="form-label" for="optName1">
+                Option 1 Name
+                <input type="text" id="optName1" placeholder="e.g. Color">
+              </label>
+              <label class="form-label" for="optName2">
+                Option 2 Name
+                <input type="text" id="optName2" placeholder="e.g. Size">
+              </label>
+              <label class="form-label" for="optName3">
+                Option 3 Name
+                <input type="text" id="optName3" placeholder="e.g. Material">
+              </label>
+            </div>
+            <button type="button" class="accent-btn-outline" id="rebuildVariantsBtn">Generate Combinations From Options</button>
+          </div>
+
+          <!-- Variants Spreadsheet Editor -->
+          <div class="variant-rows-section">
+            <div class="variant-rows-header">
+              <h4>Active Variants Sheet</h4>
+              <button type="button" class="add-row-btn" id="addVariantRowBtn">+ Add New Variant Row</button>
+            </div>
+            <div class="variant-table-container">
+              <table class="variant-editor-table" id="variantEditorTable">
+                <thead>
+                  <tr>
+                    <th style="width: 50px; text-align: center;">Img</th>
+                    <th>Option Value 1</th>
+                    <th>Option Value 2</th>
+                    <th>Option Value 3</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Sale Price</th>
+                    <th style="width: 80px;">On Sale</th>
+                    <th style="width: 70px;">Stock</th>
+                    <th style="width: 70px;">Weight</th>
+                    <th style="width: 50px; text-align: center;">Act</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bulk Price Editor Panel -->
+            <div class="bulk-price-section" id="bulkPriceSection" style="margin-top: 20px; padding: 15px; border: 1px dashed var(--border-color); background-color: var(--bg-soft); border-radius: 6px;">
+              <h5 style="margin-bottom: 6px; font-size: 13px; font-weight: 700; color: var(--ink-primary);">Bulk Price Editor by Group</h5>
+              
+              <!-- Global Formula Calculator Row -->
+              <div class="global-formula-row" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
+                <label style="font-size: 11px; font-weight: 600; color: var(--ink-primary); display: flex; align-items: center; gap: 4px;">
+                  Global Price Formula (e.g. <code>[price]*1.2</code>, <code>[price]/1.2</code>)
+                </label>
+                <div style="display: flex; gap: 6px;">
+                  <input type="text" id="globalFormulaInput" placeholder="[price]/1.2" style="flex: 1; padding: 6px 10px; font-size: 11px; border: 1px solid var(--border-color); border-radius: 4px; outline: none; background: var(--bg-app); color: var(--ink-primary);">
+                  <button type="button" id="applyGlobalFormulaBtn" style="padding: 6px 14px; font-size: 11px; font-weight: 600; background-color: var(--accent-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Apply Formula</button>
+                </div>
+              </div>
+
+              <p style="margin-bottom: 12px; font-size: 11px; color: var(--ink-secondary); line-height: 1.4;">
+                Variants with the same price are grouped together. Type a new price below to perform secondary 2nd-stage manual edits on individual groups. (Calculated prices are rounded automatically to 1 decimal place).
+              </p>
+              <div id="bulkPriceGroupsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Drawer Sticky Save/Apply Actions Footer -->
+      <footer class="drawer-footer">
+        <button class="secondary-button" id="cancelEdit" type="button">Close</button>
+        <button class="primary-button accent" id="saveProductEdit" type="button">Save Details</button>
+      </footer>
+    </aside>
+
+    <!-- SLIDING INTERACTIVE PRODUCT EDITOR DRAWER -->
+    <!-- ... remains the same in markup ... -->
+
+    <!-- PREMIUM ACCESS PASSCODE MODAL -->
+    <div class="passcode-modal-overlay" id="passcodeModalOverlay">
+      <div class="passcode-modal-card">
+        <button class="passcode-modal-close" id="closePasscodeModal" aria-label="Close modal">&times;</button>
+        <div class="passcode-modal-header">
+          <div class="lock-graphic" style="background: rgba(143, 119, 67, 0.1); color: var(--accent-primary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:24px; height:24px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <h2>ShopShuttle Lite Mode</h2>
+          <p>This is the free, open-source version of ShopShuttle.</p>
+        </div>
+        
+        <div class="passcode-modal-body" style="padding: 10px 0; text-align: left;">
+          <p style="font-size: 13px; line-height: 1.6; color: var(--ink-primary); margin-bottom: 12px;">
+            Welcome to the open-source community edition! All advanced features are fully unlocked for you to explore for free:
+          </p>
+          <ul style="font-size: 12px; line-height: 1.8; color: var(--ink-secondary); margin-bottom: 16px; padding-left: 20px;">
+            <li><strong>Full Multi-Platform Scraper</strong>: Extract details from Shopify, Squarespace, and WooCommerce.</li>
+            <li><strong>Dynamic Platform Previews</strong>: Automatically structures target columns and views.</li>
+            <li><strong>Squarespace Image Sync</strong>: Associate scraped variants to Squarespace Media Manager IDs.</li>
+          </ul>
+          <div style="background: rgba(143, 119, 67, 0.05); border: 1px dashed var(--border-color); padding: 12px; border-radius: var(--radius-md); font-size: 12px; line-height: 1.5; color: var(--ink-primary);">
+            💡 <strong>Lite Version Rule:</strong> You can parse and convert <strong>one product URL link at a time</strong>. To scrape URLs in bulk, consider hosting your own instance or upgrading.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING ACTIONS GROUP -->
+    <div class="floating-actions-group">
+      <!-- Service Doc Button -->
+      <button class="floating-doc-btn" id="floatingDocBtn" type="button" title="View Service Documentation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span>Service Doc</span>
+      </button>
+
+      <!-- Lite Info Button -->
+      <button class="floating-pricing-btn" id="floatingPricingBtn" type="button" title="View Lite Mode Info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>Lite Info</span>
+      </button>
+    </div>
+
+    <!-- DOCUMENTATION MODAL -->
+    <div class="doc-modal-overlay" id="docModalOverlay">
+      <div class="doc-modal-card">
+        <button class="doc-modal-close" id="closeDocModal" aria-label="Close modal">&times;</button>
+        
+        <div class="doc-modal-header">
+          <div class="doc-graphic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px; height:22px;">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <h2>Service Documentation</h2>
+          <p>Technical specifications and architecture overview for ShopShuttle</p>
+        </div>
+
+        <div class="doc-modal-body">
+          <article class="doc-article">
+              <h3>"A premium, client-first ETL utility that scrapes product metadata from e-commerce websites and formats them into platform-compliant CSV templates."</h3>
+              <p>The <strong>ShopShuttle</strong> is designed for merchants, developers, and dropshippers migrating or mirroring products across Shopify, Squarespace, and WooCommerce. It prioritizes data privacy, immediate UI response, and frictionless access.</p>
+
+              <div style="background: rgba(194, 144, 28, 0.04); border: 1.5px dashed rgba(194, 144, 28, 0.3); border-radius: var(--radius-md); padding: 12px; margin: 12px 0;">
+                <p style="margin: 0 0 6px 0; font-weight: 700; color: var(--accent-primary);">🛡️ Core Trust Principles:</p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 11.5px; line-height: 1.5;">
+                  <li><strong>Zero Server Storage Guarantee</strong>: All CSV compilation, mapping, and calculations occur strictly inside your local browser memory (<code>state</code>). No product listings or URLs are ever saved on our servers.</li>
+                  <li><strong>Free Lite Access</strong>: This open-source community edition bypasses passcode checks, enabling immediate, free client-first scraping access.</li>
+                </ul>
+              </div>
+
+              <hr>
+
+              <h2>1. Core Features (Merchant Value Priority)</h2>
+
+              <h4>💡 Lite Version Limit</h4>
+              <ul>
+                <li><strong>1 Link Extraction Limit</strong>: To prevent server proxy abuse, the free Lite version enforces a limit of <strong>1 product URL extraction at a time</strong>. Bulk multiline parsing is restricted.</li>
+              </ul>
+              
+              <h4>🔌 A. ShopShuttle Clipper (Chrome Extension)</h4>
+              <ul>
+                <li><strong>One-Click Clipping</strong>: Extracts product titles, descriptions, options, images, and pricing matrices directly from the active tab.</li>
+                <li><strong>Active Tab Synchronization</strong>: Transmits clipped products instantly to the open ShopShuttle web application using the secure cross-window message bridge (<code>web-bridge.js</code> listener).</li>
+              </ul>
+
+              <h4>🌐 B. Multi-Platform Product Scraper</h4>
+              <ul>
+                <li><strong>Shopify Extraction</strong>: Resolves high-fidelity public product objects via client-side fetches directly to <code>/products/{handle}.js</code> (bypassing proxies whenever CORS is open).</li>
+                <li><strong>Squarespace Extraction</strong>: Scrapes the page's HTML structure and locates the embedded <code>Static.SQUARESPACE_CONTEXT</code> object to parse option variants and specific pricing lists.</li>
+                <li><strong>WooCommerce Extraction</strong>: Uses a multi-layered extraction technique:
+                  <ol>
+                    <li>Parses structured <strong>JSON-LD (schema.org Product)</strong> script blocks to capture title, category, description, and primary image.</li>
+                    <li>Decodes the <code>data-product_variations</code> form attribute to map complex product variation weights and price details.</li>
+                    <li>Falls back to standard DOM classes (e.g., <code>product_cat-[name]</code>, <code>product_tag-[name]</code>) for tag harvesting.</li>
+                  </ol>
+                </li>
+              </ul>
+
+              <h4>📊 C. Dynamic Spreadsheet Preview Grid</h4>
+              <ul>
+                <li><strong>Live Column Mapping</strong>: Dynamically updates preview columns to match the target upload requirements (Shopify bulk CSV format, WooCommerce product import layout, or Squarespace CSV template).</li>
+                <li><strong>Interactive Editing</strong>: Lets users inspect, review, and filter scraped items inside an interactive table before exporting the spreadsheets.</li>
+              </ul>
+
+              <h4>🔄 D. Squarespace Media Sync &amp; Image Association</h4>
+              <ul>
+                <li><strong>Media Manager Association</strong>: Automates the linking of product variant options to uploaded Squarespace Media Manager image IDs.</li>
+                <li><strong>Context-Aware UI</strong>: This panel and its interactive mapping tools are dynamically displayed <strong>only</strong> when Squarespace is selected as the export target.</li>
+              </ul>
+
+              <h4>💱 E. Smart Tax (VAT) and Currency Processor</h4>
+              <ul>
+                <li><strong>Tax Adjustments</strong>: Computes ex-VAT and inc-VAT calculations by detecting the source tax policy, extracting the net base cost, and applying target VAT settings.</li>
+                <li><strong>Currency Conversion Engine</strong>: Converts original price values (GBP, DKK, EUR, etc.) to target store currencies (USD, KRW, CAD, etc.). Supports automated live exchange rate fetches (cached in <code>localStorage</code>) or manual custom exchange overrides.</li>
+              </ul>
+
+              <h4>🏷️ F. Custom SKU Generation Policies</h4>
+              <ul>
+                <li><strong>Handle-based Auto-generation</strong>: Combines the URL product handle and variant ID to generate unique, predictable identification codes.</li>
+                <li><strong>Source SKU Preservation</strong>: Imports and keeps original SKU codes from source e-commerce platforms.</li>
+                <li><strong>Empty Layout</strong>: Excludes SKUs from columns, allowing destination store engines to assign identification numbers automatically.</li>
+              </ul>
+
+              <h4>🔑 G. Frictionless Passcode Access</h4>
+              <ul>
+                <li><strong>Instant Checkout Simulation</strong>: Stripe-powered credit card checkout generates a unique 6-digit access passcode instantly.</li>
+                <li><strong>Automated Email Delivery</strong>: Sends the newly generated passcode directly to the buyer's email using a responsive English template.</li>
+              </ul>
+
+              <hr>
+
+              <h2>2. System Architecture &amp; Data Flow</h2>
+              <p>The application utilizes a hybrid architecture that balances client-side direct requests with server-side proxy fallback execution.</p>
+
+              <!-- Flowchart -->
+              <div class="flowchart-container" style="display: flex; flex-direction: column; gap: 12px; margin: 16px 0; padding: 16px; background: var(--bg-soft); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px;">
+                    💻 Client Browser<br><span style="font-weight: 400; font-size: 10px; color: var(--ink-secondary);">app.js / index.html</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--ink-secondary);">➔</div>
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px; border-color: #10b981;">
+                    🟢 Direct Fetch<br><span style="font-weight: 400; font-size: 10px; color: #10b981;">Shopify API (No CORS)</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px;">
+                    💻 Client Browser<br><span style="font-weight: 400; font-size: 10px; color: var(--ink-secondary);">CORS / WAF Blocked</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--ink-secondary);">➔</div>
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px; border-color: var(--accent-primary);">
+                    ☁️ Cloudflare Pages Worker<br><span style="font-weight: 400; font-size: 10px; color: var(--ink-secondary);">Proxy (Server-Side)</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px; border-color: var(--accent-primary);">
+                    ☁️ Cloudflare Pages Worker
+                  </div>
+                  <div style="font-size: 12px; color: var(--ink-secondary);">➔</div>
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px; border-color: #8b5cf6;">
+                    🌐 Target Stores &amp; FX Rates<br><span style="font-weight: 400; font-size: 10px; color: #8b5cf6;">Woo/Squarespace/Rates</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px;">
+                    ⚙️ Pricing / SKU Engines
+                  </div>
+                  <div style="font-size: 12px; color: var(--ink-secondary);">➔</div>
+                  <div style="flex: 1; padding: 8px 10px; background: var(--bg-pane); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 11px; border-color: var(--danger);">
+                    📥 Exported CSV Files<br><span style="font-weight: 400; font-size: 10px; color: var(--danger);">Shopify/Woo/Squarespace</span>
+                  </div>
+                </div>
+              </div>
+
+              <h4>Key Architectural Behaviors:</h4>
+              <ol>
+                <li><strong>Hybrid Patching</strong>: If target stores do not block requests using CORS or firewalls, the client-side JavaScript handles data retrieval directly to minimize server loads. If a request is blocked, the backend Cloudflare Worker serves as a proxy.</li>
+                <li><strong>Reactive State Updates</strong>: Changes to pricing formulas, tax margins, or SKU policies update the local state memory (<code>state</code>) instantly, triggering immediate re-renders of preview tables and export structures.</li>
+              </ol>
+
+              <hr>
+
+              <h2>3. Technical Stack</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Technology</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Frontend</strong></td>
+                    <td>HTML5, Vanilla JavaScript (ES6+), Vanilla CSS</td>
+                    <td>Simple static page architecture utilizing a responsive Brutalist layout without third-party UI frameworks.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Backend</strong></td>
+                    <td>Cloudflare Pages (Serverless Functions)</td>
+                    <td>Handles server-side scraping proxies and API routing (<code>functions/api/product.js</code>).</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Build Tools</strong></td>
+                    <td>Cloudflare Wrangler</td>
+                    <td>Used for local development emulation and deployment pipelines.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Auth</strong></td>
+                    <td>Clerk JWT &amp; API Passcode Guard</td>
+                    <td>Verifies authorization passcodes to secure backend functions.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <hr>
+
+              <h2>4. Third-Party Integrations &amp; Libraries</h2>
+              <ol>
+                <li><strong>Cloudflare Pages Functions</strong>: Hosts APIs and serves static frontend assets. Deployed at the edge to maintain minimal latency globally.</li>
+                <li><strong>Open Exchange Rates API (<code>open.er-api.com</code>)</strong>: Supplies daily currency ratios. If API requests fail, the client defaults to the cached rates stored in the browser's <code>localStorage</code>.</li>
+                <li><strong>Clerk &amp; Passcode KV</strong>: Handles passcode verification and premium access controls.</li>
+                <li><strong>Custom CSV Builder</strong>: Sanitizes and structures strings to ensure compatibility with target importing systems.</li>
+              </ol>
+
+              <hr>
+
+              <h2>💡 Summary</h2>
+              <blockquote>
+                <p>This application functions as a client-first ETL (Extract, Transform, Load) utility that parses and standardizes product listings from multiple e-commerce structures, applies user-configured tax and currency rules, and maps them to standard bulk import formats.</p>
+              </blockquote>
+            </article>
+        </div>
+      </div>
+    </div>
+
+    <!-- STICKY/FIXED PRIVACY AND TRUST FOOTER -->
+    <footer class="sticky-privacy-bar">
+      <div class="sticky-privacy-bar-inner">
+        <div class="privacy-bar-item">
+          <span>🔒 Zero Server Storage</span>
+          <div class="privacy-tooltip">Zero Server Storage: All CSV parsing occurs locally. No product data, auth tokens, or files are ever stored on our servers.</div>
+        </div>
+        <div class="privacy-bar-item">
+          <span>✉️ Secure Email Policy</span>
+          <div class="privacy-tooltip">Secure Email Policy: Email is used exclusively to send your passcodes and updates. 100% private, never shared.</div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./app.js?v=0.7.0_swiss_edition"></script>
+  </body>
+</html>
